@@ -11,7 +11,7 @@ requests_page = 'https://what.cd/requests.php'
 class UserSession(Session):
     login_page = 'https://what.cd/login.php'
 
-    headers = {
+    new_headers = {
         'User-Agent': "Mozilla/5.0 (Windows NT 6.3; WOW64;\
          Trident/7.0; MALNJS; rv:11.0) like Gecko",
         'Accept-Encoding': ', '.join(('gzip', 'deflate')),
@@ -21,18 +21,13 @@ class UserSession(Session):
 
     def __init__(self, user_name, password):
         super().__init__()
-        """ Start Up """
         self.user_name = user_name
         self.password = password
+        self.headers = self.new_headers
 
-
-        self.session = Session()
         auth = {'username': self.user_name, 'password': self.password,
                 'keeplogged': 1, 'login': 'Log in'}
-        self.session.headers = self.headers
-        self.session.post(self.login_page, data=auth)
-        self.cookies = self.session.cookies
-
+        self.post(self.login_page, data=auth)
 
 
 class AlbumRequest:
@@ -136,4 +131,3 @@ def get_login():
         password = lines[1]
 
     return username, password
-
