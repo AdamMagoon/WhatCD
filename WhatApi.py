@@ -9,10 +9,43 @@ from time import time, sleep
 from requests import get
 
 # what_object = GazelleAPIMod(username=u_name, password=pw)
-requests_page = 'https://what.cd/requests.php/'
 
-u_name = 'FilthyFingers'
-pw = '2016Platinum'
+
+def get_login():
+    with open('secret.txt', 'r') as f:
+        lines = [line.strip() for line in f]
+        username = lines[0]
+        password = lines[1]
+
+    return username, password
+
+
+class UserSession(Session):
+    login_page = 'https://what.cd/login.php'
+
+    new_headers = {
+        'User-Agent': "Mozilla/5.0 (Windows NT 6.3; WOW64;\
+         Trident/7.0; MALNJS; rv:11.0) like Gecko",
+        'Accept-Encoding': ', '.join(('gzip', 'deflate')),
+        'Accept': '*/*',
+        'Connection': 'keep-alive',
+    }
+
+    def __init__(self, user_name, password):
+        super().__init__()
+        self.user_name = user_name
+        self.password = password
+        self.headers = self.new_headers
+
+        auth = {'username': self.user_name, 'password': self.password,
+                'keeplogged': 1, 'login': 'Log in'}
+        self.post(self.login_page, data=auth)
+
+
+requests_page = 'https://what.cd/requests.php'
+u_name, pw = get_login()
+
+user = UserSession(u_name, pw)
 
 
 def rate_limiter(max_per_10_seconds):
@@ -35,8 +68,10 @@ def rate_limiter(max_per_10_seconds):
     return decorate
 
 
-def similar(a, b):
-    return SequenceMatcher(None, a, b).ratio()
+def similar(a, b, threshold=0.7):
+    if SequenceMatcher(None, a, b).ratio() > threshold:
+        return True
+    return False
 
 
 class RequestMod(request.Request):
@@ -101,7 +136,7 @@ class GazelleAPIMod(api.GazelleAPI):
     def get_artist_json(self, artist_name):
         return self.artist_json(artist_name)
 
-    @rate_limiter(5)
+    @rate_limiter(3)
     def get_request(self, id, **kwargs):
         """
             Returns a Request for the passed ID, associated with this API object. You'll need to call Request.update_data()
@@ -124,28 +159,6 @@ class GazelleAPIMod(api.GazelleAPI):
             print(e)
             print("Artist Name: {}".format(artist_name))
             return self.request(action='browse', artistname=artist_name)
-
-
-class UserSession(Session):
-    login_page = 'https://what.cd/login.php'
-
-    new_headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 6.3; WOW64;\
-         Trident/7.0; MALNJS; rv:11.0) like Gecko",
-        'Accept-Encoding': ', '.join(('gzip', 'deflate')),
-        'Accept': '*/*',
-        'Connection': 'keep-alive',
-    }
-
-    def __init__(self, user_name, password):
-        super().__init__()
-        self.user_name = user_name
-        self.password = password
-        self.headers = self.new_headers
-
-        auth = {'username': self.user_name, 'password': self.password,
-                'keeplogged': 1, 'login': 'Log in'}
-        self.post(self.login_page, data=auth)
 
 
 class AlbumRequest:
@@ -181,8 +194,9 @@ date = {}
 
 
 @rate_limiter(5)
-def get_requests_soup(session, page=1):
-    response = get(requests_page + "?page={}".format(page))
+def get_requests_soup(page=1):
+
+    response = user.get(requests_page + "?page={}".format(page))
     if response.status_code != 200:
         print('Cannot make a proper connection to the server {}.\n'
               'Status Code: {}\n'
@@ -262,10 +276,23 @@ def parse_requests_page(soup):
     return results
 
 
-def get_login():
-    with open('secret.txt', 'r') as f:
-        lines = [line.strip() for line in f]
-        username = lines[0]
-        password = lines[1]
+def match_two_sets(set_a, set_b):
+    return bool(set_a.intersection(set(set_b)))
 
-    return username, password
+
+def filter_torrent_alphabetically(tor_dict, letter):
+    """
+        returns a torrent group if:
+        torrent['groupName'] matches the letter given
+    """
+
+    # group_names = [x for x in tor_dict if x['groupName'].strip()[0] == letter]
+    for group in tor_dict:
+        album = group['groupName'].strip()
+        if len(album) > 0 and album[0] == letter:
+            yield group
+
+
+
+
+
