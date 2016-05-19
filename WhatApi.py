@@ -9,7 +9,6 @@ from time import time, sleep
 from requests import get
 
 # what_object = GazelleAPIMod(username=u_name, password=pw)
-<<<<<<< HEAD
 
 
 def get_login():
@@ -48,9 +47,6 @@ u_name, pw = get_login()
 
 user = UserSession(u_name, pw)
 
-=======
-requests_page = 'https://what.cd/requests.php/'
->>>>>>> 40e58d498c2e20367bdeeecde6ad60d4e1c1c8ef
 
 def rate_limiter(max_per_10_seconds):
     min_interval = 10.0 / float(max_per_10_seconds)
@@ -72,15 +68,10 @@ def rate_limiter(max_per_10_seconds):
     return decorate
 
 
-<<<<<<< HEAD
 def similar(a, b, threshold=0.7):
     if SequenceMatcher(None, a, b).ratio() > threshold:
         return True
     return False
-=======
-def similar(a, b):
-    return SequenceMatcher(None, a, b).ratio()
->>>>>>> 40e58d498c2e20367bdeeecde6ad60d4e1c1c8ef
 
 
 class RequestMod(request.Request):
@@ -145,11 +136,7 @@ class GazelleAPIMod(api.GazelleAPI):
     def get_artist_json(self, artist_name):
         return self.artist_json(artist_name)
 
-<<<<<<< HEAD
     @rate_limiter(3)
-=======
-    @rate_limiter(5)
->>>>>>> 40e58d498c2e20367bdeeecde6ad60d4e1c1c8ef
     def get_request(self, id, **kwargs):
         """
             Returns a Request for the passed ID, associated with this API object. You'll need to call Request.update_data()
@@ -174,31 +161,6 @@ class GazelleAPIMod(api.GazelleAPI):
             return self.request(action='browse', artistname=artist_name)
 
 
-<<<<<<< HEAD
-=======
-class UserSession(Session):
-    login_page = 'https://what.cd/login.php'
-
-    new_headers = {
-        'User-Agent': "Mozilla/5.0 (Windows NT 6.3; WOW64;\
-         Trident/7.0; MALNJS; rv:11.0) like Gecko",
-        'Accept-Encoding': ', '.join(('gzip', 'deflate')),
-        'Accept': '*/*',
-        'Connection': 'keep-alive',
-    }
-
-    def __init__(self, user_name, password):
-        super().__init__()
-        self.user_name = user_name
-        self.password = password
-        self.headers = self.new_headers
-
-        auth = {'username': self.user_name, 'password': self.password,
-                'keeplogged': 1, 'login': 'Log in'}
-        self.post(self.login_page, data=auth)
-
-
->>>>>>> 40e58d498c2e20367bdeeecde6ad60d4e1c1c8ef
 class AlbumRequest:
     def __init__(self, name, _id, tags, votes, bounty, filled, filled_by,
                  requested_by, created_date, last_vote):
@@ -232,14 +194,9 @@ date = {}
 
 
 @rate_limiter(5)
-<<<<<<< HEAD
 def get_requests_soup(page=1):
 
     response = user.get(requests_page + "?page={}".format(page))
-=======
-def get_requests_soup(session, page=1):
-    response = get(requests_page + "?page={}".format(page))
->>>>>>> 40e58d498c2e20367bdeeecde6ad60d4e1c1c8ef
     if response.status_code != 200:
         print('Cannot make a proper connection to the server {}.\n'
               'Status Code: {}\n'
@@ -319,7 +276,6 @@ def parse_requests_page(soup):
     return results
 
 
-<<<<<<< HEAD
 def match_two_sets(set_a, set_b):
     return bool(set_a.intersection(set(set_b)))
 
@@ -340,12 +296,3 @@ def filter_torrent_alphabetically(tor_dict, letter):
 
 
 
-=======
-def get_login():
-    with open('secret.txt', 'r') as f:
-        lines = [line.strip() for line in f]
-        username = lines[0]
-        password = lines[1]
-
-    return username, password
->>>>>>> 40e58d498c2e20367bdeeecde6ad60d4e1c1c8ef
