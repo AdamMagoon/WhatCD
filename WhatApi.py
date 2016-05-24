@@ -2,13 +2,10 @@ from re import sub
 from difflib import SequenceMatcher
 from bs4 import BeautifulSoup
 from pygazelle import pygazelle
-from pygazelle.pygazelle import api, request
+from pygazelle.pygazelle import api
 from pygazelle.pygazelle.request import InvalidRequestException
 from requests import Session
 from time import time, sleep
-from requests import get
-
-# what_object = GazelleAPIMod(username=u_name, password=pw)
 
 
 def get_login():
@@ -44,7 +41,6 @@ class UserSession(Session):
 
 requests_page = 'https://what.cd/requests.php'
 u_name, pw = get_login()
-
 user = UserSession(u_name, pw)
 
 
@@ -58,9 +54,9 @@ def rate_limiter(max_per_10_seconds):
             elapsed = time() - last_time_called[0]
             left_to_wait = min_interval - elapsed
             if left_to_wait > 0:
-                print("Sleeeep....")
+                print("Wait for {} to cool down".format(func.__name__))
                 sleep(left_to_wait)
-                print("Okay, wake up!")
+                print("Nigga we frozen, go!")
             ret = func(*args, **kwargs)
             last_time_called[0] = time()
             return ret
@@ -74,28 +70,29 @@ def similar(a, b, threshold=0.7):
     return False
 
 
-class RequestMod(request.Request):
+class RequestMod(api.Request):
+
+    category,           \
+    title,              \
+    album_title,        \
+    year,               \
+    artists,            \
+    artist,             \
+    name,               \
+    votes,              \
+    bounty,             \
+    time_added,         \
+    acceptable_media,   \
+    acceptable_bitrates,\
+    acceptable_formats, \
+    description,        \
+    tags = (None,)*15
 
     def __init__(self, id, parent_api):
         self.id = id
         self.parent_api = parent_api
-        self.category = None
-        self.title = None
-        self.year = None
-        self.time_added = None
-        self.votes = None
-        self.bounty = None
-        self.album_title = None
-        self.acceptable_media = None
-        self.acceptable_bitrates = None
-        self.acceptable_formats = None
-        self.description = None
-        self.tags = None
-        self.artist = None
-        self.name = None
 
-        self.parent_api.cached_requests[
-            self.id] = self  # add self to cache of known Request objects
+        self.parent_api.cached_requests[self.id] = self
 
     def set_data(self, request_item_json_data):
         if self.id != request_item_json_data['requestId']:
@@ -117,8 +114,10 @@ class RequestMod(request.Request):
         self.tags = request_item_json_data['tags']
         music_info = request_item_json_data['musicInfo']
         if 'artists' in music_info.keys():
-            self.artist = music_info['artists'][0]['name']
-            self.name = "{} - {}".format(self.artist, self.album_title)
+            self.artists = music_info['artists']
+            if len(self.artists) > 0:
+                self.artist = self.artists[0]['name']
+                self.name = "{} - {}".format(self.artist, self.album_title)
         self.parent_api.cached_requests[self.id] = self
 
     def __repr__(self):
@@ -137,17 +136,16 @@ class GazelleAPIMod(api.GazelleAPI):
         return self.artist_json(artist_name)
 
     @rate_limiter(3)
-    def get_request(self, id, **kwargs):
+    def get_request(self, _id, **kwargs):
         """
             Returns a Request for the passed ID, associated with this API object. You'll need to call Request.update_data()
             if the request hasn't already been cached. This is done on demand to reduce unnecessary API calls.
         """
 
-        id = int(id)
-        kwargs['id'] = id
+        _id = int(_id)
+        kwargs['id'] = _id
         response = self.request(action='request', **kwargs)
-
-        req = RequestMod(id, self)
+        req = RequestMod(_id, self)
         req.set_data(response)
         return req
 
@@ -156,12 +154,12 @@ class GazelleAPIMod(api.GazelleAPI):
         try:
             return self.request(action='artist', artistname=artist_name)
         except pygazelle.api.RequestException as e:
-            print(e)
-            print("Artist Name: {}".format(artist_name))
+            print("{}\nArtist Name: {}".format(e, artist_name))
             return self.request(action='browse', artistname=artist_name)
 
 
 class AlbumRequest:
+
     def __init__(self, name, _id, tags, votes, bounty, filled, filled_by,
                  requested_by, created_date, last_vote):
         try:
@@ -209,15 +207,12 @@ def get_requests_soup(page=1):
 
 def parse_requests_page(soup):
     """ Given a BeautifulSoup Tag object, we return a list of
-        AlbumRequest objects.
-
-    """
+        AlbumRequest objects."""
     results = []
     table_soup = soup.find('table', {'id': 'request_table'})
     # This is currently the <a></a> tag's href snippet for accessing the
     # request ID's page
     request_key = 'requests.php?action=view&id='
-
     # List of table row tags <tr></tr>
     table_rows = table_soup.find_all('tr')
 
@@ -251,7 +246,6 @@ def parse_requests_page(soup):
         # the HTML for the votes tag contains two elements. We only need the
         # first -- the number of votes.
         votes = column[1][0]
-
         bounty = column[2]
         filled = column[3]
 
@@ -268,7 +262,6 @@ def parse_requests_page(soup):
         # Finally we initialize our AlbumRequest instance
         new_request = AlbumRequest(name, _id, tags, votes, bounty, filled, f_by,
                                    req, created, last_vote)
-
         # And add it to our results
         results.append(new_request)
 
@@ -293,6 +286,5 @@ def filter_torrent_alphabetically(tor_dict, letter):
             yield group
 
 
-
-
-
+def search_external_resources():
+    pass

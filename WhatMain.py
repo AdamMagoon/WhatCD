@@ -4,8 +4,6 @@ from WhatApi import get_login, similar, GazelleAPIMod, \
     filter_torrent_alphabetically
 
 u_name, pw = get_login()
-
-
 # user = UserSession(user_name=u_name, password=pw)
 
 
@@ -56,6 +54,7 @@ def find_matches():
             torrent_group_album = torrent_group['groupName']
             if similar(album, torrent_group_album, threshold=0.8):
                 matches[request_object] = [torrent_group]
+                print(matches)
 
                 # bitrate = set(request_object.acceptable_bitrates)
                 _format = set(request_object.acceptable_formats)
@@ -81,5 +80,5 @@ def find_matches():
 
 
 if __name__ == '__main__':
-    find_matches()
-    # update_album_requests()
+    # find_matches()
+    update_album_requests()
